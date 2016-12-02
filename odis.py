@@ -2,17 +2,18 @@
 from flask import Flask, render_template, request, jsonify
 import json
 import pika
+import os
 
 app = Flask(__name__)
  
 __author__ = 'Lukasz Zalewski / plus.pl'
 
-RABBITMQ_HOST = 'maasdockvm1'
-RABBITMQ_PORT = 5672
-VIRTUAL_HOST = 'odis.pluslab.pl'
-USER = 'odis'
-PASSWD = '!QAZ2wsx'
-QUEUE = 'task_queue'
+RABBITMQ_HOST = str(os.environ['RABBITMQ_HOST'])
+RABBITMQ_PORT = int(os.environ['RABBITMQ_PORT'])
+VIRTUAL_HOST = os.environ['VIRTUAL_HOST']
+USER = os.environ['USER']
+PASSWD = os.environ['PASSWD']
+QUEUE = os.environ['QUEUE']
 
 @app.route('/hello')
 def HelloODIS():
