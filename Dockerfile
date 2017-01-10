@@ -9,15 +9,8 @@ MAINTAINER luka <lzalewsk@gmail.com>
 RUN ln -s /var/www/app/static /var/www/odis-static
 VOLUME /var/www/odis-static
 
-# Set default ENV
-ENV RABBITMQ_MAIN_HOST somerabbithost
-ENV RABBITMQ_MAIN_PORT 5672
-ENV RABBITMQ_BCK_HOST somerabbithost
-ENV RABBITMQ_BCK_PORT 5672
-ENV VIRTUAL_HOST somevhost
-ENV USER guest
-ENV PASSWD guest
-ENV QUEUE somequeue
+ADD ssl /ssl
+ADD conf /conf
 
 # Expose the port where uWSGI will run
 EXPOSE 5000

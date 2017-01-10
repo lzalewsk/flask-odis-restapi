@@ -3,20 +3,19 @@ from flask import Flask, render_template, request, jsonify
 import json
 import pika
 from pika import exceptions
-import os
+import toml
 
 app = Flask(__name__)
  
 __author__ = 'Lukasz Zalewski / plus.pl'
 
-RABBITMQ_MAIN_HOST = str(os.environ['RABBITMQ_MAIN_HOST'])
-RABBITMQ_MAIN_PORT = int(os.environ['RABBITMQ_MAIN_PORT'])
-RABBITMQ_BCK_HOST = str(os.environ['RABBITMQ_BCK_HOST'])
-RABBITMQ_BCK_PORT = int(os.environ['RABBITMQ_BCK_PORT'])
-VIRTUAL_HOST = os.environ['VIRTUAL_HOST']
-USER = os.environ['USER']
-PASSWD = os.environ['PASSWD']
-QUEUE = os.environ['QUEUE']
+CONF_FILE = '/conf/conf.toml'
+
+def read_conf(CONF_FILE):
+    with open(CONF_FILE) as conffile:
+        conf = toml.loads(conffile.read())
+    return conf
+
 
 def connect_to_rabbit_node(connectionParams):
     # polacz sie z pierwszym dostepnym nodem rabbitowym z listy
@@ -55,34 +54,37 @@ def main():
 
 @app.route('/api/add_record', methods=['GET', 'POST'])
 def add_msg():
+    global CONF
+
     content = request.json
     if content is None:
     	return jsonify({"status":"ERROR"})
     else:
 	#print content
+        sslOptions = CONF['output']['rabbitmq']['ssl_options']
+
 	connectionParams = []
-        credentials = pika.PlainCredentials(USER, PASSWD)
-        main_parameters = pika.ConnectionParameters(RABBITMQ_MAIN_HOST,
-                                               RABBITMQ_MAIN_PORT,
-                                               VIRTUAL_HOST,
-                                               credentials)
-	#backup connection parameters
-        bck_parameters = pika.ConnectionParameters(RABBITMQ_BCK_HOST,
-                                               RABBITMQ_BCK_PORT,
-                                               VIRTUAL_HOST,
-                                               credentials)
-	connectionParams.append(main_parameters)
-	connectionParams.append(bck_parameters)
+	rmqaccess = CONF['output']['rabbitmq']
+        credentials = pika.PlainCredentials(rmqaccess['username'], rmqaccess['password'])
+
+	for host in CONF['output']['rabbitmq']['host']:
+		connection_x = pika.ConnectionParameters(host['url']
+						 ,host['port']
+						 ,rmqaccess['vhost']
+						 ,credentials
+						 ,ssl = rmqaccess['ssl']
+						 ,ssl_options = sslOptions)
+		connectionParams.append(connection_x)
 
         #connection = pika.BlockingConnection(main_parameters)
         connection = connect_to_rabbit_node(connectionParams)
 
         channel = connection.channel()
-        channel.queue_declare(queue=QUEUE, durable=True)
+        channel.queue_declare(queue=rmqaccess['queue_name'], durable=True)
 
         message = content
         channel.basic_publish(exchange='',
-                              routing_key=QUEUE,
+                              routing_key=rmqaccess['queue_name'],
                               body=json.dumps(content),
                               properties=pika.BasicProperties(
                                   delivery_mode = 2, # make message persistent
@@ -92,5 +94,8 @@ def add_msg():
 	return jsonify({"status":"OK","next":87000})
 
 if __name__ == '__main__':
-    app.debug = True
+    global CONF
+    CONF = read_conf(CONF_FILE)
+    uwsgiParam = CONF['uwsgi']
+    app.debug = uwsgiParam['debug']
     app.run()

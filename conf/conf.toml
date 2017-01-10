@@ -1,0 +1,30 @@
+# This is a TOML document.
+
+title = "TOML ODIS REST API Config File"
+
+[client]
+    name = "ODIS-REST-API"
+
+#Extra UWSGI App param
+[uwsgi]
+    debug = true
+
+## HA-mode Output to RMQ
+[output.rabbitmq]
+    vhost = "<vhost>"
+    queue_name = "<queue>"
+    username = "<user>"
+    password  = "<pass>"
+    ssl = true
+    [output.rabbitmq.ssl_options]
+        "ca_certs" = "/ssl/xxx.pem"
+        "certfile" = "/ssl/yyy.pem"
+        "keyfile" =  "/ssl/zzz.pem"
+
+    [[output.rabbitmq.host]]
+        url = "<host1>"
+        port = 5671
+
+    [[output.rabbitmq.host]]
+        url = "<host2>"
+        port = 5671
