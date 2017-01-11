@@ -55,6 +55,8 @@ def main():
 @app.route('/api/add_record', methods=['GET', 'POST'])
 def add_msg():
     global CONF
+    if 'CONF' not in globals():
+	CONF = read_conf(CONF_FILE)
 
     content = request.json
     if content is None:
