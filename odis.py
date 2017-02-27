@@ -93,7 +93,7 @@ def add_msg():
                                 ))
 #        print(" [x] Sent %r" % message)
         connection.close()
-	return jsonify({"status":"OK","next":1800})
+	return jsonify({"status":"OK","next":600})
 
 if __name__ == '__main__':
     global CONF
